@@ -23,4 +23,23 @@ namespace AsmEdition
 		_continue:
 			__asm jmp jmpAddr_DonateGP;
 	}
+
+	const char* str_Job = "TreeJob Ranking Updated!!";
+	const DWORD a = 0x00936640;
+	static __declspec(naked) void ASM_RankUpdate()
+	{
+		__asm
+		{
+			push str_Job;
+			push 0x1000000;
+			call a;
+			add esp, 0x10;
+			pop edi;
+			pop esi;
+			pop ebx;
+			mov esp, ebp;
+			pop ebp;
+			ret;
+		}
+	}
 }

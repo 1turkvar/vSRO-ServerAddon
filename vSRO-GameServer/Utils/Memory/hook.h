@@ -14,6 +14,7 @@ int addr_from_this(T funptr) {
 }
 
 template<typename T>
+
 void placeHook(int trampoline_location, T& target_location)
 {
 	placeHook(trampoline_location, reinterpret_cast<int>(&target_location));
@@ -38,7 +39,10 @@ static bool placeHook(int trampoline_location, int target_location)
 
 	memcpy((LPVOID)trampoline_location, jmp_inst, sizeof(jmp_inst));
 
-	VirtualProtect((LPVOID)trampoline_location, sizeof(jmp_inst), dwProtect, NULL);
+	DWORD otherProtect;
+	if (!VirtualProtect((LPVOID)trampoline_location, sizeof(jmp_inst), dwProtect, &otherProtect)) {
+		perror("Failed to restore protection on memory");
+	}
 	return true;
 }
 
@@ -63,8 +67,37 @@ static bool replaceOffset(int trampoline_location, int target_location)
 
 	memcpy((LPVOID)offset_location, inst_offset, sizeof(inst_offset));
 
-	VirtualProtect((LPVOID)offset_location, sizeof(inst_offset), dwProtect, NULL);
+	DWORD otherProtect;
+	if (!VirtualProtect((LPVOID)offset_location, sizeof(inst_offset), dwProtect, &otherProtect)) {
+		perror("Failed to restore protection on memory");
+	}
 	return true;
+}
+
+static void replaceOffsetEdit(int trampoline_location, int target_location)
+{
+	char inst_offset[] = { 0x00, 0x00, 0x00, 0x00 };
+	int distance;
+	DWORD dwProtect = 0;
+
+	int offset_location = trampoline_location + 1;
+
+	distance = target_location;
+
+	// Write jump-distance to instruction
+	memcpy(inst_offset, &distance, 4);
+
+	if (!VirtualProtect((LPVOID)offset_location, sizeof(inst_offset), PAGE_EXECUTE_READWRITE, &dwProtect)) {
+		perror("Failed to unprotect memory\n");
+		return;
+	}
+
+	memcpy((LPVOID)offset_location, inst_offset, sizeof(inst_offset));
+
+	DWORD otherProtect;
+	if (!VirtualProtect((LPVOID)offset_location, sizeof(inst_offset), dwProtect, &otherProtect)) {
+		perror("Failed to restore protection on memory");
+	}
 }
 
 static void replaceAddr(int addr, int value)
@@ -78,7 +111,10 @@ static void replaceAddr(int addr, int value)
 
 	*((int*)addr) = value;
 
-	VirtualProtect((LPVOID)addr, sizeof(int), dwProtect, NULL);
+	DWORD otherProtect;
+	if (!VirtualProtect((LPVOID)addr, sizeof(int), dwProtect, &otherProtect)) {
+		perror("Failed to restore protection on memory");
+	}
 }
 
 static void vftableHook(unsigned int vftable_addr, int offset, int target_func)

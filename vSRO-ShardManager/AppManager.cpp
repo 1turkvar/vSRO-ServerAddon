@@ -13,6 +13,8 @@
 
 /// Static stuffs
 bool AppManager::m_IsInitialized;
+std::string AppManager::m_IP;
+
 void AppManager::Initialize()
 {
 	if (!m_IsInitialized)
@@ -32,12 +34,14 @@ void AppManager::InitConfigFile()
 	{
 		ini.SetSpaces(false);
 		// Memory
+		ini.SetValue("Server", "SERVER_IP", "127.0.0.1", "; IP Spoof");
 		ini.SetLongValue("Account", "CHARACTERS_MAX", 4, "; Maximum characters per account");
 		ini.SetLongValue("Guild", "UNION_LIMIT", 8, "; Union participants limit");
 		ini.SetLongValue("Event", "CTF_PARTICIPANS_MIN", 8, "; Minimum participants required to start Capture The Flag");
 		ini.SetLongValue("Event", "BA_PARTICIPANS_MIN", 8, "; Minimum participants required to start Battle Arena");
 		ini.SetBoolValue("Fix", "PARTY_MATCH_1HOUR_DC", true, "; Fix disconnect when party takes more than 1 hour on party match");
 		ini.SetBoolValue("Fix", "GUILD_POINTS", true, "; Prevents negative values on guild points");
+		ini.SetBoolValue("Fix", "TREEJOB", true, "; Tree Job Update");
 		// App
 		ini.SetBoolValue("App", "DEBUG_CONSOLE", true, "; Attach debug console");
 		// Save it
@@ -84,7 +88,20 @@ void AppManager::InitHooks()
 		{
 			std::cout << "   - OnDonateGuildPointsErrorMsg" << std::endl;
 		}
+
 	}
+	if (ini.GetBoolValue("Fix", "TREEJOB", true))
+	{
+		printf(" - TREEJOB\r\n");
+		for (int i = 0; i < 197; i++)
+			WriteMemoryValue<uint8_t>(0x00459A05 + i, 0x90); // NOP
+		if (placeHook(0x00459A00, addr_from_this(&AsmEdition::ASM_TreeJob)))
+		{
+			std::cout << "   - Tree Job Ranking" << std::endl;
+		}
+	}
+
+
 }
 void AppManager::InitPatchValues()
 {
@@ -96,6 +113,21 @@ void AppManager::InitPatchValues()
 
 	// buffers
 	uint8_t byteValue;
+
+	//Server
+	auto currentValueIP = ReadMemoryString(0x00686349 + 1);
+	if (!currentValueIP.empty())
+	{
+		m_IP = ini.GetValue("Server", "SERVER_IP", "127.0.0.7");
+		auto newValueLen = m_IP.size();
+		// Check value it's not empty 
+		if (newValueLen != 0)
+		{
+			printf(" - IP (%s) -> (%s)\r\n", currentValueIP.c_str(), m_IP.c_str());
+			replaceOffsetEdit(0x00686349, (uint32_t)m_IP.c_str());
+			replaceOffsetEdit(0x0068639D, (uint32_t)m_IP.c_str());
+		}
+	}
 
 	// Account
 	if (ReadMemoryValue<uint8_t>(0x0040F47C + 2, byteValue))

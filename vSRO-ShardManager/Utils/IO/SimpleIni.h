@@ -2089,7 +2089,7 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::SetLongValue(
 #endif // __STDC_WANT_SECURE_LIB__
 
     // convert to output text
-    SI_CHAR szOutput[64];
+    SI_CHAR szOutput[64]{};
     SI_CONVERTER c(m_bStoreIsUtf8);
     c.ConvertFromStore(szInput, strlen(szInput) + 1, 
         szOutput, sizeof(szOutput) / sizeof(SI_CHAR));
@@ -2151,7 +2151,7 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::SetDoubleValue(
 #endif // __STDC_WANT_SECURE_LIB__
 
 	// convert to output text
-	SI_CHAR szOutput[64];
+    SI_CHAR szOutput[64]{};
 	SI_CONVERTER c(m_bStoreIsUtf8);
 	c.ConvertFromStore(szInput, strlen(szInput) + 1, 
 		szOutput, sizeof(szOutput) / sizeof(SI_CHAR));
@@ -2212,7 +2212,7 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::SetBoolValue(
     const char * pszInput = a_bValue ? "true" : "false";
 
     // convert to output text
-    SI_CHAR szOutput[64];
+    SI_CHAR szOutput[64]{};
     SI_CONVERTER c(m_bStoreIsUtf8);
     c.ConvertFromStore(pszInput, strlen(pszInput) + 1, 
         szOutput, sizeof(szOutput) / sizeof(SI_CHAR));
